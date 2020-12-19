@@ -35,6 +35,32 @@
 				"navigationStyle":"custom"
             }
         }
+        ,{
+            "path" : "pages/chat/chat",
+            "style" :                                                                                    
+            {
+                // "navigationBarTitleText": "",
+                // "enablePullDownRefresh": false
+				"navigationStyle":"custom"
+            }
+            
+        }
+        ,{
+            "path" : "pages/userhome/userhome",
+            "style" :                                                                                    
+            {
+                "navigationStyle":"custom"
+            }
+            
+        }
+        ,{
+            "path" : "pages/userdetails/userdetails",
+            "style" :                                                                                    
+            {
+                "navigationStyle":"custom"
+            }
+            
+        }
     ],
 	"globalStyle": {
 		"navigationBarTextStyle": "black",

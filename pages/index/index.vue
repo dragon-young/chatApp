@@ -5,7 +5,7 @@
 				<image src="../../static/images/img/a1.jpg"></image>
 			</view>
 			<view class="top-bar-center">
-				<image src="../../static/images/index/火@3x.png" mode=""></image>
+				<image src="../../static/logo.png" mode=""></image>
 			</view>
 			<view class="top-bar-right">
 				<view class="search">
@@ -39,10 +39,10 @@
 			</view>
 			<!-- 好友列表 -->
 			<view class="friends">
-				<view class="friend-list" v-for="item in friends" :key="item.id">
+				<view class="friend-list" v-for="item in friends" :key="item.id" @tap="toAccess(item)">
 					<view class="friend-list-l">
 						<!-- 消息数量 -->
-						<view class="tip">{{item.tip}}</view>
+						<view class="tip">{{item.tip>99? '99...' : item.tip}}</view>
 						<!-- 好友头像 -->
 						<image :src="item.imgUrl" mode=""></image>
 					</view>
@@ -72,7 +72,7 @@
 				friends: [],
 				imgUrl: '',
 				// 当前用户id
-				currentId: '2'
+				currentId: '1'
 			}
 		},
 		// 页面加载的时候，触发该函数
@@ -109,6 +109,12 @@
 			toSearch () {
 				uni.navigateTo({
 					url: '../search/search'
+				})
+			},
+			// 跳转到好友申请的页面
+			toAccess (item) {
+				uni.navigateTo({
+					url: '../chat/chat?name=' + item.name
 				})
 			}
 		}

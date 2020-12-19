@@ -55,8 +55,8 @@
 				// console.log(value.trim().length)
 				if (value.trim().length > 0) {
 					// console.log(value.trim())
-					this.searchUser(value)
-				}
+					this.searchUser(value.trim())
+				};
 				
 			},
 			// 根据关键字搜索用户
@@ -141,12 +141,16 @@
 			font-size: 36rpx;
 			font-weight: 600;
 			line-height: 60rpx;
-			padding: 22rpx 0;
+			// padding: 22rpx 0;
 		}
 		.list_user {
 			display: flex;
+			padding-top: 18rpx;
 			padding-bottom: 18rpx;
 			// border: 1px solid red;
+			&:active {
+				background: $uni-bg-color-grey;
+			}
 			image {
 				width: 96rpx;
 				height: 96rpx;

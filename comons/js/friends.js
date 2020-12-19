@@ -15,7 +15,7 @@ export default {
 				id: '2',
 				userid : '2',
 				imgUrl: 'a2.jpg',
-				tip: 12,
+				tip: 105,
 				name: '付佳慧',
 				email: 'fujiahui@qq.com',
 				time: new Date(),
