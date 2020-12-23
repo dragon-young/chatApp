@@ -5,32 +5,35 @@
 				<image src="../../static/images/common/back16.png" mode="" @tap="backOne"></image>
 			</view>
 			<view class="top-bar-right">
-				<image src="../../static/images/userhome/more@3x.png" mode=""></image>
+				<image v-if="relation == 0 || relation == 1" src="../../static/images/userhome/more@3x.png" mode="" @tap="goDetails"></image>
 			</view>
 		</view>
 		<view class="bg">
 			<view class="bg-bar">
 			</view>
-			<image class="bg-img" src="../../static/images/img/a2.jpg" mode="aspectFill"></image>
+			<image class="bg-img" :src="imgurl" mode="aspectFill"></image>
 		</view>
 		<view class="main">
 			<view class="user-header">
 				<view class="sex" :style="{background:sexColor}">
-					<image src="../../static/images/userhome/女@3x.png" mode=""></image>
+					<image :src="seximg" mode=""></image>
 				</view>
 				<view class="user-img">
-					<image src="../../static/images/img/a2.jpg" mode="aspectFill"></image>
+					<image :src="imgurl" mode="aspectFill"></image>
 				</view>
 			</view>
 			<view class="user-imf">
 				<view class="name">{{user.name}}</view>
-				<view class="nick">昵称: {{user.nick}}</view>
-				<view class="intr">{{user.intr}}</view>
+				<view class="nick">昵称: {{user.name}}</view>
+				<view class="intr">{{user.explain}}</view>
 			</view>
 		</view>
 		<view class="bottom-bar">
-			<view class="button" @tap="addFriendAnimation">
+			<view class="button" @tap="addFriendBtn" v-if="relation == 2">
 				加我好友
+			</view>
+			<view class="button" @tap="addFriendAnimation" v-if="relation ==0">
+				发送消息
 			</view>
 		</view>
 		<view :animation="animationData" class="add-misg" :style="{height: addHeight + 'px', bottom: '-' + addHeight + 'px'}">
@@ -39,7 +42,7 @@
 		</view>
 		<view class="add-btn" :animation="animationData">
 			<view class="cancel" @tap="addFriendAnimation">取消</view>
-			<view class="send">发送</view>
+			<view class="send" @tap="send">发送</view>
 		</view>
 	</view>
 </template>
@@ -51,17 +54,26 @@
 				sexColor: 'rgba(255, 93, 91, 1)',
 				myname: 'dragonYoung',
 				user: {
-					name: '一之濑',
-					nick: 'yizhilai',
-					intr: '谁也不过是一只可爱的小天使，我们都是在天上飞来飞去，起讨厌有价值的东西，不过十一的天气和年上汽'
 				},
 				// 添加height高度
 				addHeight: '',
 				// 制作添加好友动画
 				animationData: {}, 
 				// 判断是否在 天剑好友界面
-				isAdd: false
+				isAdd: false,
+				seximg: '../../static/images/userhome/女@3x.png',
+				id: '', 	//'用户id，通过token拿取'
+				token: '',
+				fid: '',	// 好友id， 通过点击头像 传参的方式获取
+				imgurl: '',
+				markname: '',
+				relation: 1, 	// 表示关系， 0表示自己， 1表示好友， 2 表示陌生人
 			};
+		},
+		onLoad(e){
+			this.getStorage()
+			this.fid = e.id
+			this.getUserInfo()
 		},
 		mounted () {
 			this.getHeight()
@@ -76,7 +88,7 @@
 				const query = uni.createSelectorQuery().in(this);
 				query.select('.bg').boundingClientRect(data => { 
 					this.addHeight = data.height - 196
-					console.log(data.height);  
+					// console.log(data.height);  
 				}).exec()
 			},
 			addFriendAnimation () {
@@ -92,6 +104,166 @@
 					animation.bottom(-this.addHeight).step()
 				}
 				this.animationData = animation.export()
+			},
+			// 获取缓存数据
+			getStorage() {
+				try {
+					const value = uni.getStorageSync('user')
+					if (value) {
+						this.id = value.id
+						this.token = value.token
+					} else {
+						uni.navigateTo({
+							url: '../login/login'
+						})
+					}
+				} catch(e) {
+					
+				}
+			},
+			getUserInfo () {
+				uni.request({
+					url: this.serverUrl + '/user/details',
+					data: {
+						id: this.fid,
+						token: this.token
+					},
+					method: 'POST',
+					success:  data=> {
+						// console.log(data)
+						let res = data.data
+						if (res.status == 200) {
+							// 成功
+							// console.log(res)
+							this.imgurl = this.serverUrl + '/user/' +  res.result.imgurl
+							if (typeof(res.explain) == 'undefined') {
+								res.result.explain = '这个人很懒， 什么都没有留下'
+							}
+							if (this.markname.length == 0) {
+								this.markname = res.name;
+							}
+							this.sexJudge(res.result.sex)
+							this.user = res.result
+							this.judgefriend()
+						} 
+						else if(res.status == 500) {
+							uni.showToast({
+								title: '服务器出错啦',
+								duration: 2000
+							})
+						}
+					}
+				})
+			},
+			// 性别判断
+			sexJudge:function(e) {
+				console.log(e);
+				if (e == 'asexual') {
+					this.seximg = '../../static/images/userhome/女@3x.png'
+					this.sexColor = 'rgba(255, 93, 91, 1)'
+				} else {
+					this.sexColor= 'rgba(0, 170, 255, 1.0)'
+					this.seximg = '../../static/images/userhome/男@3x.png'
+				}
+			},
+			judgefriend () {
+				if (this.id == this.fid) {
+					this.relation = 0
+				} else {
+					// 如果不是自己
+					uni.request({
+						url: this.serverUrl + '/search/isfriend',
+						data: {
+							uid: this.id,
+							fid: this.uid,
+							toekn: this.token
+						},
+						method: 'POST',
+						success:  data=> {
+							console.log(data)
+							let res = data.data
+							if (res.status == 200) {
+								// 成功
+								this.relation = 1;
+								this.getMarkName()
+							} else if (res.status == 400) {
+								// 陌生人
+								this.relation = 2
+							}
+							else if(res.status == 500) {
+								uni.showToast({
+									title: '服务器出错啦',
+									duration: 2000
+								})
+							}
+						}
+					})
+				}
+			},
+			getMarkName () {
+				uni.request({
+					url: this.serverUrl + '/user/markname',
+					data: {
+						uid: this.id,
+						fid: this.uid,
+						toekn: this.token
+					},
+					method: 'POST',
+					success:  data=> {
+						console.log(data)
+						let res = data.data
+						if (res.status == 200) {
+							// 成功
+							// 修改昵称
+							this.markname = res.markname
+						}
+						else if(res.status == 500) {
+							uni.showToast({
+								title: '服务器出错啦',
+								duration: 2000
+							})
+						}
+					}
+				})
+			},
+			addFriendBtn() {
+				this.addFriendAnimation()
+			},
+			send () {
+				this.addFriendAnimation()
+				uni.request({
+					url: this.serverUrl + '/friend/applyfriend',
+					data: {
+						uid: this.id,
+						fid: this.fid,
+						msg: this.msg,
+						token: this.token
+					},
+					method: 'POST',
+					success:  data=> {
+						// console.log(data)
+						let res = data.data
+						if (res.status == 200) {
+							uni.showToast({
+								title: '已经提出申请',
+								duration: 2000
+							})
+						} 
+						else if(res.status == 500) {
+							uni.showToast({
+								title: '服务器出错啦',
+								duration: 2000
+							})
+						} else if (res.status == 300) {
+							console.log("验证失效");
+						}
+					}
+				})
+			},
+			goDetails () {
+				uni.navigateTo({
+					url: '../userdetails/userdetails?id=' + this.id 
+				})
 			}
 		}
 	}

@@ -9,7 +9,7 @@
 		</view>
 		<!-- logo -->
 		<view class="logo">
-			<image src="../../static/images/login/火@3x.png" mode=""></image>
+			<image src="/static/images/login/huo@3x.png" mode=""></image>
 		</view>
 		<view class="main">
 			<view class="title">
@@ -20,7 +20,7 @@
 				<input type="text" v-model="usernameOrEmail" placeholder="用户名/邮箱" value="" class="user" placeholder-style="color:#999;font-weight:500" />
 				<input type="password" v-model="password" placeholder="密码" value="" class="password" placeholder-style="color:#999;font-weight:500" />
 			</view>
-			<view class="tips">
+			<view class="tips" v-if="matchErr">
 				输入用户或密码失败！
 			</view>
 		</view>
@@ -33,7 +33,19 @@
 		data() {
 			return {
 				usernameOrEmail: '',
-				password: ''
+				password: '',
+				token:'',
+				matchErr: false,
+			}
+		},
+		onLoad (e) {
+			if(e.user) {
+				this.usernameOrEmail = e.user;
+				uni.showToast({
+					title: '注册成功请登录',
+					icon: 'none',
+					duration: 1500
+				})
 			}
 		},
 		methods: {
@@ -47,9 +59,52 @@
 			login () {
 				// 1. 表单的预验证 (只有用户名或密码都不为空的时候，才去提交表单数据)
 				if (this.usernameOrEmail && this.password) {
-					console.log("提交")
+					this.toLogin()
 				}
+			},
+			
+			toLogin () {
+				uni.request({
+					url: this.serverUrl + '/login/match',
+					data: {
+						data: this.usernameOrEmail,
+						pwd: this.password
+					},
+					method: 'POST',
+					success:  data=> {
+						console.log(data)
+						let res = data.data
+						if (res.status == 200) {
+							// 登陆成功
+							try {
+								uni.setStorageSync('user', {
+									'id': res.back.id,
+									'name': res.back.name,
+									'imgurl': res.back.imgurl,
+									'token': res.back.token
+								})
+							}catch(e) {
+								console.log("数据存储出错");
+							}
+							uni.navigateTo({
+								url: '../index/index'
+							})
+							this.matchErr = false
+							
+						} else if (res.status == 400) {
+							// 用户匹配失败
+							this.matchErr = true
+						}
+						else if(res.status == 500) {
+							uni.showToast({
+								title: '服务器出错啦',
+								duration: 2000
+							})
+						}
+					}
+				})
 			}
+			
 		}
 	}
 </script>

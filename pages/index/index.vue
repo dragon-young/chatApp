@@ -1,9 +1,9 @@
 <template>
 	<view class="content">
 		<view class="top-bar">
-			<view class="top-bar-left">
-				<image src="../../static/images/img/a1.jpg"></image>
-			</view>
+			<navigator :url="'../userhome/userhome?id=' + uid" class="top-bar-left" hover-class="none">
+				<image :src="imgurl"></image>
+			</navigator>
 			<view class="top-bar-center">
 				<image src="../../static/logo.png" mode=""></image>
 			</view>
@@ -72,11 +72,15 @@
 				friends: [],
 				imgUrl: '',
 				// 当前用户id
-				currentId: '1'
+				currentId: '1',
+				uid: '',		// 用户id
+				imgurl: '',		// 用户头像
+				token: ''		// token验证
 			}
 		},
 		// 页面加载的时候，触发该函数
 		onLoad() {
+			this.getStorage()
 			this.friends = []
 			this.getFriends()
 		},
@@ -85,6 +89,29 @@
 				return myFun.dateTime(date)
 			}, 
 			getFriends () {
+				uni.request({
+					url: this.serverUrl + '/index/getfriend',
+					data: {
+						uid: this.uid,
+						state: '0',
+						token: this.token
+					},
+					method: 'POST',
+					success:  data=> {
+						console.log(data)
+						let res = data.data
+						if (res.status == 200) {
+							// 成功
+							
+						} 
+						else if(res.status == 500) {
+							uni.showToast({
+								title: '服务器出错啦',
+								duration: 2000
+							})
+						}
+					}
+				})
 				let e = datas.friends()
 				for (var i = 0; i < datas.friends().length; i++) {
 					if (this.isFriend(e[i])) {
@@ -116,6 +143,24 @@
 				uni.navigateTo({
 					url: '../chat/chat?name=' + item.name
 				})
+			}, 
+			// 获取缓存数据
+			getStorage() {
+				try {
+					const value = uni.getStorageSync('user')
+					if (value) {
+						this.uid = value.id
+						this.imgurl = this.serverUrl + '/user/' +  value.imgurl
+						this.token = value.token
+						console.log(this.imgurl)
+					} else {
+						uni.navigateTo({
+							url: '../login/login'
+						})
+					}
+				} catch(e) {
+					
+				}
 			}
 		}
 	}
